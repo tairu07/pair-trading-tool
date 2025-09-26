@@ -1,8 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
+import { RealtimeProvider, useRealtime } from './contexts/RealtimeContext'
 
-function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
+  const { isConnected, connectionError, actions } = useRealtime()
+
+  useEffect(() => {
+    // Request notification permission on app start
+    actions.requestNotificationPermission()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -10,9 +17,20 @@ function App() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Pair Trading Tool
-            </h1>
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-gray-900">
+                Pair Trading Tool
+              </h1>
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                  {isConnected ? 'リアルタイム接続中' : '接続切断'}
+                </span>
+                {connectionError && (
+                  <span className="text-xs text-red-500">({connectionError})</span>
+                )}
+              </div>
+            </div>
             <div className="flex space-x-4">
               <button
                 onClick={() => setActiveTab('dashboard')}
@@ -72,6 +90,13 @@ function App() {
 
 // Dashboard Content
 function DashboardContent() {
+  const { pairs, alerts, actions } = useRealtime()
+  
+  // Calculate stats from real-time data
+  const activePairs = Object.keys(pairs).length
+  const activeAlerts = alerts.filter(alert => alert.status === 'active').length
+  const recentAlerts = alerts.slice(0, 3)
+  
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
@@ -93,7 +118,7 @@ function DashboardContent() {
                       アクティブペア
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      3
+                      {activePairs || 3}
                     </dd>
                   </dl>
                 </div>
@@ -137,7 +162,7 @@ function DashboardContent() {
                       アクティブアラート
                     </dt>
                     <dd className="text-lg font-medium text-yellow-600">
-                      2
+                      {activeAlerts}
                     </dd>
                   </dl>
                 </div>
@@ -175,27 +200,46 @@ function DashboardContent() {
               最近のアクティビティ
             </h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">トヨタ/ホンダ</p>
-                  <p className="text-sm text-gray-500">Z-Score 2.34でショートエントリーシグナル</p>
-                </div>
-                <span className="text-sm text-gray-500">10:30</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">MUFG/SMFG</p>
-                  <p className="text-sm text-gray-500">Z-Score -1.87でロングエントリーシグナル</p>
-                </div>
-                <span className="text-sm text-gray-500">09:45</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">バックテスト完了</p>
-                  <p className="text-sm text-gray-500">トヨタ/ホンダ 基本戦略 - PnL: +8.4%</p>
-                </div>
-                <span className="text-sm text-gray-500">14:35</span>
-              </div>
+              {recentAlerts.length > 0 ? (
+                recentAlerts.map((alert, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{alert.pair_name || 'Unknown Pair'}</p>
+                      <p className="text-sm text-gray-500">{alert.message}</p>
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString('ja-JP', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      }) : '--:--'}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">トヨタ/ホンダ</p>
+                      <p className="text-sm text-gray-500">Z-Score 2.34でショートエントリーシグナル</p>
+                    </div>
+                    <span className="text-sm text-gray-500">10:30</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">MUFG/SMFG</p>
+                      <p className="text-sm text-gray-500">Z-Score -1.87でロングエントリーシグナル</p>
+                    </div>
+                    <span className="text-sm text-gray-500">09:45</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">バックテスト完了</p>
+                      <p className="text-sm text-gray-500">トヨタ/ホンダ 基本戦略 - PnL: +8.4%</p>
+                    </div>
+                    <span className="text-sm text-gray-500">14:35</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -420,6 +464,14 @@ function AlertsContent() {
         </div>
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <RealtimeProvider>
+      <AppContent />
+    </RealtimeProvider>
   )
 }
 
