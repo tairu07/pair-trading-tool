@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { useWebSocket } from '../hooks/useWebSocket'
 
 // WebSocket URL
-const WS_URL = 'ws://localhost:8000/ws'
+import { WS_URL } from '../config/api'
 
 // Initial state
 const initialState = {

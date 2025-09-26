@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/pair-trading-dashboard/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "backend/api/index.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/api/index.py"
+    },
+    {
+      "src": "/health",
+      "dest": "/backend/api/index.py"
+    },
+    {
+      "src": "/docs",
+      "dest": "/backend/api/index.py"
+    },
+    {
+      "src": "/openapi.json",
+      "dest": "/backend/api/index.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/pair-trading-dashboard/dist/$1"
+    }
+  ],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "J_QUANTS_REFRESH_TOKEN": "@j_quants_refresh_token",
+    "DISCORD_WEBHOOK_URL": "@discord_webhook_url",
+    "SECRET_KEY": "@secret_key"
+  },
+  "functions": {
+    "backend/api/index.py": {
+      "maxDuration": 30
+    }
+  }
+}

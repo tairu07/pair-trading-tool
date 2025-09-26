@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 from datetime import datetime
 from typing import Dict, Set
 import websockets
@@ -15,7 +16,12 @@ logger = logging.getLogger(__name__)
 class WebSocketManager:
     def __init__(self):
         self.connections: Set[WebSocketServerProtocol] = set()
-        self.jquants_client = JQuantsClient()
+        refresh_token = os.getenv('J_QUANTS_REFRESH_TOKEN')
+        if refresh_token:
+            self.jquants_client = JQuantsClient(refresh_token)
+        else:
+            self.jquants_client = None
+            logger.warning("J-Quants refresh token not found in environment variables")
         self.monitoring_active = False
         
     async def register(self, websocket: WebSocketServerProtocol):
