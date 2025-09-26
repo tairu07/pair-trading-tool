@@ -34,16 +34,5 @@
       "src": "/(.*)",
       "dest": "/frontend/pair-trading-dashboard/dist/$1"
     }
-  ],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "J_QUANTS_REFRESH_TOKEN": "@j_quants_refresh_token",
-    "DISCORD_WEBHOOK_URL": "@discord_webhook_url",
-    "SECRET_KEY": "@secret_key"
-  },
-  "functions": {
-    "backend/api/index.py": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
